@@ -16,7 +16,7 @@ public class BuildHandler : MonoBehaviour {
     public Material BuildAllowedMaterial;
     public Material BuildNotAllowedMaterial;
 
-    public bool BuildAllowed = false;
+    public bool BuildAllowed = true;
     public bool isCursorOnMarker = false;
 
     [SerializeField]
@@ -123,7 +123,8 @@ public class BuildHandler : MonoBehaviour {
     {
         isSet = true;
         Destroy(PreviewBlock);
-        Instantiate(Foundation, Hit.point + new Vector3(0, foundationsHeight, 0), Quaternion.identity);
+        GameObject B_Found = Instantiate(Foundation, Hit.point + new Vector3(0, foundationsHeight, 0), Quaternion.identity) as GameObject;
+        B_Found.GetComponent<Rigidbody>().isKinematic = true;
         isSet = false;
     }
 
@@ -155,7 +156,8 @@ public class BuildHandler : MonoBehaviour {
             else if (hitInfo.collider.gameObject.GetComponent<SocketMarker>().Direction == "Back")
                 itemGlobalTransform = hitInfo.collider.gameObject.GetComponent<SocketMarker>().setItemTransform - new Vector3(0, 0, ActiveItem.transform.localScale.y / 2);
 
-            Instantiate(ActiveItem, itemGlobalTransform, Quaternion.identity);
+            GameObject B_Found = Instantiate(ActiveItem, itemGlobalTransform, Quaternion.identity) as GameObject;
+            B_Found.GetComponent<Rigidbody>().isKinematic = true;
             ActiveItem = null;
 
             hitInfo.collider.gameObject.GetComponent<SocketMarker>().isSocketOccured = true;

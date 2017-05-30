@@ -20,7 +20,7 @@ public class InventoryManadger : MonoBehaviour {
     {
         if (Input.GetKeyDown(KeyCode.Tab) && !GetComponent<Console>().isConsoleActive)
         {
-            isInventoryOpened = boolInverser(isInventoryOpened);
+            isInventoryOpened = !isInventoryOpened;
 
             foreach (InventorySocket sc in Inventory)
             {
@@ -51,16 +51,6 @@ public class InventoryManadger : MonoBehaviour {
             GetComponent<BuildHandler>().isBlueprintActive = true;
         else
             GetComponent<BuildHandler>().isBlueprintActive = false;
-    }
-
-    private bool boolInverser(bool var)
-    {
-        if (!var)
-            var = true;
-        else if (var)
-            var = false;
-
-        return var;
     }
 
     public void MakeSocketActive(int indx)
