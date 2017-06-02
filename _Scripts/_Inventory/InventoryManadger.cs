@@ -1,10 +1,14 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 
 public class InventoryManadger : MonoBehaviour {
 
     public InventorySocket[] Inventory = new InventorySocket[15];
     public ActiveItemSocket[] ActiveSlots = new ActiveItemSocket[5];
     public ActiveItemSocket SelectedSocket;
+
+    [SerializeField]
+    private GameObject CraftingTable;
 
     public bool isInventoryOpened = false;
 
@@ -24,8 +28,11 @@ public class InventoryManadger : MonoBehaviour {
 
             foreach (InventorySocket sc in Inventory)
             {
-                sc.gameObject.SetActive(isInventoryOpened);
+                sc.GetComponent<Image>().enabled = isInventoryOpened;
+                sc.NumB.GetComponent<Text>().enabled = isInventoryOpened;
             }
+
+            CraftingTable.SetActive(isInventoryOpened);
         }
 
         if (Input.GetKeyDown(KeyCode.Alpha1))

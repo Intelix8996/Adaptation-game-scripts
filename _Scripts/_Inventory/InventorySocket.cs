@@ -9,8 +9,7 @@ public class InventorySocket : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     public ItemBase Item;
     public int Number;
 
-    [SerializeField]
-    private Text NumB;
+    public Text NumB;
     [SerializeField]
     private InventoryEventHandler Handler;
     [SerializeField]
@@ -166,7 +165,7 @@ public class InventorySocket : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             isDescriptionVisible = false;
             Description.GetComponent<Animator>().Play("Out");
-            Description.transform.position = new Vector3(20000,20000,-15);
+            Description.transform.position = new Vector3(20000, 20000, -50);
         }
     }
 }
