@@ -92,14 +92,17 @@ public class CharStats : MonoBehaviour
     [SerializeField]
     private Text RadiationCount; //RadGroup
 
+    private UnityEngine.PostProcessing.PostProcessingBehaviour PostProcessingProfile;
+
     private void Start()
     {
         Root = GetComponent<ThirdPersonCharacter>();
+        PostProcessingProfile = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<UnityEngine.PostProcessing.PostProcessingBehaviour>();
     }
 
     public void Update()
     {
-        if (Input.GetKey(KeyCode.LeftShift))
+        if (Input.GetKey(KeyCode.LeftShift) && GetComponent<ThirdPersonUserControl>().m_Move != Vector3.zero)
         {
             Stamina -= StaminaOut;
             Stamina = Clamp(Stamina);
@@ -109,11 +112,33 @@ public class CharStats : MonoBehaviour
             Stamina += StaminaRestore;
             Stamina = Clamp(Stamina);
         }
+
         if (Input.GetButtonDown("Jump") && Stamina > StaminaOutJump && Root.m_IsGrounded && !Root.m_Crouching)
         {
             Stamina -= StaminaOutJump;
         }
 
+        if (Stamina < 100)
+        {
+            PostProcessingProfile.profile.chromaticAberration.enabled = true;
+            PostProcessingProfile.profile.chromaticAberration.settings = new UnityEngine.PostProcessing.ChromaticAberrationModel.Settings
+            {
+                intensity = 1 - (Stamina / 100),
+            };
+            PostProcessingProfile.profile.vignette.enabled = true;
+            PostProcessingProfile.profile.vignette.settings = new UnityEngine.PostProcessing.VignetteModel.Settings
+            {
+                mode = UnityEngine.PostProcessing.VignetteModel.Mode.Classic,
+                color = new Color(0f, 0f, 0f, 1f),
+                center = new Vector2(0.5f, 0.5f),
+                intensity = .5f - (Stamina / 200),
+                smoothness = 0.2f,
+                roundness = 1f,
+                mask = null,
+                opacity = 1f,
+                rounded = false
+            };
+        }
         if (Stamina < 10)
         {
             Root.m_MoveSpeedMultiplier = Root.m_NormalSpeedMultiplier;
@@ -148,6 +173,15 @@ public class CharStats : MonoBehaviour
             RadiationIcon.enabled = true;
             RadiationText.enabled = true;
             RadiationCount.enabled = true;
+
+            PostProcessingProfile.profile.grain.enabled = true;
+            PostProcessingProfile.profile.grain.settings = new UnityEngine.PostProcessing.GrainModel.Settings
+            {
+                colored = true,
+                intensity = Radiation / 100,
+                size = 1.5f,
+                luminanceContribution = 1 - (Radiation / 100)
+            };
         }
         else
         {
@@ -156,6 +190,8 @@ public class CharStats : MonoBehaviour
             RadiationIcon.enabled = false;
             RadiationText.enabled = false;
             RadiationCount.enabled = false;
+
+            PostProcessingProfile.profile.grain.enabled = false;
         }
 
 

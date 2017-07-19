@@ -1,4 +1,6 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
+using System;
 
 public class BuildHandler : MonoBehaviour {
 
@@ -6,6 +8,13 @@ public class BuildHandler : MonoBehaviour {
     [SerializeField]
     private bool isSet = false;
 
+    [Header("")]
+    public List<BlockBase> BlockList = new List<BlockBase>();
+    public int CurrentBlock = 0;
+    [SerializeField]
+    private GameObject BlockDescriptionBlock;
+
+    [Header("")]
     [SerializeField]
     private GameObject Foundation;
     [SerializeField]
@@ -13,6 +22,7 @@ public class BuildHandler : MonoBehaviour {
     [SerializeField]
     private GameObject[] Markers;
 
+    [Header("")]
     public Material BuildAllowedMaterial;
     public Material BuildNotAllowedMaterial;
 
@@ -29,9 +39,16 @@ public class BuildHandler : MonoBehaviour {
 
     private RaycastHit Hit = new RaycastHit();
 
+    public static BuildHandler _BlockLibrary;
+
+    void Awake()
+    {
+        _BlockLibrary = this;
+    }
+
     private void Start()
     {
-        MakePreview(Foundation);
+        MakePreview(BlockList[CurrentBlock].Prefab);
         Markers = GameObject.FindGameObjectsWithTag("SocketMarker");
     }
 
@@ -63,7 +80,7 @@ public class BuildHandler : MonoBehaviour {
             if (Hit.collider.gameObject.tag == "SocketMarker" && !Hit.collider.gameObject.GetComponent<SocketMarker>().isSocketOccured)
             {
                 isCursorOnMarker = true;
-                PreviewBlock.transform.position = GetSetTransform(Foundation, Hit);
+                PreviewBlock.transform.position = GetSetTransform(BlockList[CurrentBlock].Prefab, Hit);
             }
             else
             {
@@ -76,18 +93,31 @@ public class BuildHandler : MonoBehaviour {
         {
             if (BuildAllowed && Hit.collider.gameObject.tag != "SocketMarker" && Hit.collider.gameObject.tag != "BuildingBlock")
             {
-                SetBlock(Foundation);
-                MakePreview(Foundation);
-            }else if (Hit.collider.gameObject.tag == "SocketMarker" && Hit.collider.gameObject.tag != "BuildingBlock")
+                SetBlock(BlockList[CurrentBlock].Prefab);
+                MakePreview(BlockList[CurrentBlock].Prefab);
+            }else if (BuildAllowed && Hit.collider.gameObject.tag == "SocketMarker" && Hit.collider.gameObject.tag != "BuildingBlock")
             {
-                Set(Foundation, Hit);
+                Set(BlockList[CurrentBlock].Prefab, Hit);
             }
-        }     
+        }
+
+        if (isBlueprintActive && Input.GetKeyDown(KeyCode.Mouse1))
+        {
+            BlockDescriptionBlock.SetActive(!BlockDescriptionBlock.activeSelf);
+        }
+
+        if (Input.mouseScrollDelta.y != 0 && BlockDescriptionBlock.activeSelf)
+        {
+            CurrentBlock += Convert.ToInt16(Input.mouseScrollDelta.y);
+            CurrentBlock = clampBlockPointer(CurrentBlock);
+            Destroy(PreviewBlock);
+            MakePreview(BlockList[CurrentBlock].Prefab); 
+        }
     }
 
     private void MakePreview(GameObject PreviewOrigin)
     {
-        PreviewBlock = Instantiate(Foundation, Hit.point, Quaternion.identity) as GameObject;
+        PreviewBlock = Instantiate(BlockList[CurrentBlock].Prefab, Hit.point, Quaternion.identity) as GameObject;
         PreviewBlock.layer = 2;
         Destroy(PreviewBlock.GetComponent<Rigidbody>());
 
@@ -123,8 +153,8 @@ public class BuildHandler : MonoBehaviour {
     {
         isSet = true;
         Destroy(PreviewBlock);
-        GameObject B_Found = Instantiate(Foundation, Hit.point + new Vector3(0, foundationsHeight, 0), Quaternion.identity) as GameObject;
-        B_Found.GetComponent<Rigidbody>().isKinematic = true;
+        GameObject Block_Inst = Instantiate(BlockList[CurrentBlock].Prefab, Hit.point + new Vector3(0, foundationsHeight, 0), Quaternion.identity) as GameObject;
+        Block_Inst.GetComponent<Rigidbody>().isKinematic = true;
         isSet = false;
     }
 
@@ -196,5 +226,15 @@ public class BuildHandler : MonoBehaviour {
             height = 1.99f;
 
         return height;
+    }
+
+    private int clampBlockPointer(int CurrentBlockPointer)
+    {
+        if (CurrentBlockPointer <= 0)
+            CurrentBlockPointer = 0;
+        if (CurrentBlockPointer >= BlockList.Count - 1)
+            CurrentBlockPointer = BlockList.Count - 1;
+
+        return CurrentBlockPointer;
     }
 }

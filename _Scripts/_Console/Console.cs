@@ -13,6 +13,10 @@ public class Console : MonoBehaviour {
     private Image Background;
 
     [Header("")]
+    [SerializeField]
+    private string[] Autoexec;
+
+    [Header("")]
     public bool isConsoleActive = false;
     [SerializeField]
     private bool isDeveloperMode = false;
@@ -42,6 +46,15 @@ public class Console : MonoBehaviour {
     private void Awake()
     {
         _Console = this;
+    }
+
+    private void Start()
+    {
+        foreach (string str in Autoexec)
+        {
+            substrings = str.Split(' ');
+            executeCommand(substrings);
+        }
     }
 
     private void Update()
@@ -77,7 +90,6 @@ public class Console : MonoBehaviour {
         }
         if (isConsoleActive)
         {
-            GetComponent<ThirdPersonUserControl>().enabled = false;
             GetComponent<CharStats>().enabled = false;
             GetComponent<UseMenu>().enabled = false;
             GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
@@ -196,6 +208,8 @@ public class Console : MonoBehaviour {
         host_dayNightCycle_speed,
         host_dayNightCycle_angle,
         t_showWater,
+        t_waterReflective,
+        t_waterStormy,
         clear,
         clearAll,
         help,
@@ -304,20 +318,20 @@ public class Console : MonoBehaviour {
             if (!isDeveloperMode)
                 UnDevErrorOutput();
             else
-                GameObject.FindGameObjectWithTag("SunLight").GetComponent<Light>().Speed = Convert.ToSingle(Substrings[1]);
+                GameObject.FindGameObjectWithTag("SunLight").GetComponent<DayNightCycle>().Speed = Convert.ToSingle(Substrings[1]);
         }
         else if (Substrings[0] == Convert.ToString(Commands.host_dayNightCycle_speed) && Substrings.Length <= 1)
-            Print(Convert.ToString(GameObject.FindGameObjectWithTag("SunLight").GetComponent<Light>().Speed));
+            Print(Convert.ToString(GameObject.FindGameObjectWithTag("SunLight").GetComponent<DayNightCycle>().Speed));
 
         if (Substrings[0] == Convert.ToString(Commands.host_dayNightCycle_angle) && Substrings.Length > 1)
         {
             if (!isDeveloperMode)
                 UnDevErrorOutput();
             else
-                GameObject.FindGameObjectWithTag("SunLight").GetComponent<Light>().Angle = Convert.ToSingle(Substrings[1]);
+                GameObject.FindGameObjectWithTag("SunLight").GetComponent<DayNightCycle>().Angle = Convert.ToSingle(Substrings[1]);
         }
         else if (Substrings[0] == Convert.ToString(Commands.host_dayNightCycle_angle) && Substrings.Length <= 1)
-            Print(Convert.ToString(GameObject.FindGameObjectWithTag("SunLight").GetComponent<Light>().Angle));
+            Print(Convert.ToString(GameObject.FindGameObjectWithTag("SunLight").GetComponent<DayNightCycle>().Angle));
 
         if (Substrings[0] == Convert.ToString(Commands.t_showWater) && Substrings.Length > 1)
         {
@@ -327,14 +341,69 @@ public class Console : MonoBehaviour {
             {
                 switch (Convert.ToInt16(Substrings[1]))
                 {
-                    case 0: GameObject.FindGameObjectWithTag("Water").GetComponent<MeshRenderer>().enabled = false; GameObject.FindGameObjectWithTag("Water").GetComponent<BoxCollider>().enabled = false; break;
-                    case 1: GameObject.FindGameObjectWithTag("Water").GetComponent<MeshRenderer>().enabled = true; GameObject.FindGameObjectWithTag("Water").GetComponent<BoxCollider>().enabled = true; break;
-                    default: GameObject.FindGameObjectWithTag("Water").GetComponent<MeshRenderer>().enabled = true; GameObject.FindGameObjectWithTag("Water").GetComponent<BoxCollider>().enabled = true; break;
+                    case 0: GameObject.FindGameObjectWithTag("Water").transform.position = new Vector3(0, -50000, 0); break;
+                    case 1: GameObject.FindGameObjectWithTag("Water").transform.position = new Vector3(0, 0, 0); break;
+                    default: GameObject.FindGameObjectWithTag("Water").transform.position = new Vector3(0, 0, 0); break;
                 }
             }
         }
         else if (Substrings[0] == Convert.ToString(Commands.t_showWater) && Substrings.Length <= 1)
             Print(Convert.ToString(GameObject.FindGameObjectWithTag("Water").GetComponent<MeshRenderer>().enabled));
+
+        if (Substrings[0] == Convert.ToString(Commands.t_waterReflective) && Substrings.Length > 1)
+        {
+            if (!isDeveloperMode)
+                UnDevErrorOutput();
+            else
+            {
+                switch (Convert.ToInt16(Substrings[1]))
+                {
+                    case 0:
+                        UnityStandardAssets.Water.PlanarReflection[] B_Scripts = GameObject.FindGameObjectWithTag("Water").GetComponentsInChildren<UnityStandardAssets.Water.PlanarReflection>();
+
+                        foreach (UnityStandardAssets.Water.PlanarReflection B_Script in B_Scripts)
+                        {
+                            B_Script.enabled = false;
+                        }
+                        break;
+                    case 1:
+                        B_Scripts = GameObject.FindGameObjectWithTag("Water").GetComponentsInChildren<UnityStandardAssets.Water.PlanarReflection>();
+
+                        foreach (UnityStandardAssets.Water.PlanarReflection B_Script in B_Scripts)
+                        {
+                            B_Script.enabled = true;
+                        }
+                        break;
+                    default:
+                        B_Scripts = GameObject.FindGameObjectWithTag("Water").GetComponentsInChildren<UnityStandardAssets.Water.PlanarReflection>();
+
+                        foreach (UnityStandardAssets.Water.PlanarReflection B_Script in B_Scripts)
+                        {
+                            B_Script.enabled = true;
+                        }
+                        break;
+                }
+            }
+        }
+        else if (Substrings[0] == Convert.ToString(Commands.t_waterReflective) && Substrings.Length <= 1)
+            Print(Convert.ToString(GameObject.FindGameObjectWithTag("Water").GetComponentInChildren<UnityStandardAssets.Water.PlanarReflection>().enabled));
+
+        if (Substrings[0] == Convert.ToString(Commands.t_waterStormy) && Substrings.Length > 1)
+        {
+            if (!isDeveloperMode)
+                UnDevErrorOutput();
+            else
+            {
+                Transform[] B_Transforms = GameObject.FindGameObjectWithTag("Water").GetComponentsInChildren<Transform>();
+
+                foreach (Transform B_Transform in B_Transforms)
+                {
+                    B_Transform.localScale = new Vector3(B_Transform.localScale.x, Convert.ToSingle(Substrings[1]) / 10, B_Transform.localScale.z);
+                }
+            }
+        }
+        else if (Substrings[0] == Convert.ToString(Commands.t_waterStormy) && Substrings.Length <= 1)
+            Print(Convert.ToString(GameObject.FindGameObjectWithTag("Water").GetComponentInChildren<Transform>().localScale.y));
 
         if (Substrings[0] == Convert.ToString(Commands.clear))
         {
@@ -723,13 +792,13 @@ public class Console : MonoBehaviour {
             {
                 switch (Convert.ToInt16(Substrings[1]))
                 {
-                    case 0: GameObject.FindGameObjectWithTag("MainCamera").GetComponent<DepthOfField>().enabled = false; GameObject.FindGameObjectWithTag("MainCamera").GetComponent<SunShafts>().enabled = false; GameObject.FindGameObjectWithTag("MainCamera").GetComponent<BloomOptimized>().enabled = false; GameObject.FindGameObjectWithTag("MainCamera").GetComponent<CreaseShading>().enabled = false; break;
-                    case 1: GameObject.FindGameObjectWithTag("MainCamera").GetComponent<DepthOfField>().enabled = true; GameObject.FindGameObjectWithTag("MainCamera").GetComponent<SunShafts>().enabled = true; GameObject.FindGameObjectWithTag("MainCamera").GetComponent<BloomOptimized>().enabled = true; GameObject.FindGameObjectWithTag("MainCamera").GetComponent<CreaseShading>().enabled = true; break;
-                    default: GameObject.FindGameObjectWithTag("MainCamera").GetComponent<DepthOfField>().enabled = true; GameObject.FindGameObjectWithTag("MainCamera").GetComponent<SunShafts>().enabled = true; GameObject.FindGameObjectWithTag("MainCamera").GetComponent<BloomOptimized>().enabled = true; GameObject.FindGameObjectWithTag("MainCamera").GetComponent<CreaseShading>().enabled = true; break;
+                    case 0: GameObject.FindGameObjectWithTag("MainCamera").GetComponent<UnityEngine.PostProcessing.PostProcessingBehaviour>().enabled = false; break;
+                    case 1: GameObject.FindGameObjectWithTag("MainCamera").GetComponent<UnityEngine.PostProcessing.PostProcessingBehaviour>().enabled = true; break;
+                    default: GameObject.FindGameObjectWithTag("MainCamera").GetComponent<UnityEngine.PostProcessing.PostProcessingBehaviour>().enabled = true; break;
                 }
             }
         }
         else if (Substrings[0] == Convert.ToString(Commands.postFX) && Substrings.Length <= 1)
-            Print(Convert.ToString(GameObject.FindGameObjectWithTag("MainCamera").GetComponent<DepthOfField>().enabled));
+            Print(Convert.ToString(GameObject.FindGameObjectWithTag("MainCamera").GetComponent<UnityEngine.PostProcessing.PostProcessingBehaviour>().enabled));
     }
 }

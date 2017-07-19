@@ -20,7 +20,7 @@ public class UseMenu : MonoBehaviour
 
         if (Input.GetButtonDown("Fire2") && Physics.Raycast(_Ray, out Hit, 10))
         {
-            if (Hit.collider.gameObject.GetComponent<Animator>() != null)
+            if (Hit.collider.gameObject.GetComponent<Animator>())
             {
                 if (Hit.collider.tag == "UseableItem")
                 {
@@ -28,10 +28,10 @@ public class UseMenu : MonoBehaviour
                     _Crate = Hit.collider.gameObject;
                     _Crate.GetComponent<Animator>().Play("Open");
                 }
-            }
-            if (Hit.collider.tag != "UseableItem")
-            {
-                _Crate.GetComponent<Animator>().Play("Close");
+                if (Hit.collider.tag != "UseableItem")
+                {
+                    _Crate.GetComponent<Animator>().Play("Close");
+                }
             }
         }
 

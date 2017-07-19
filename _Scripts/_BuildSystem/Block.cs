@@ -2,6 +2,6 @@
 
 public class Block : MonoBehaviour {
 
-    public string Cost = "";
-    
+    public ItemBase[] Cost;
+    public int Tier = 0;
 }

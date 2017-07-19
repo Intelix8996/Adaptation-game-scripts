@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 public class CraftEventHandler : MonoBehaviour, IPointerClickHandler  {
@@ -20,8 +21,17 @@ public class CraftEventHandler : MonoBehaviour, IPointerClickHandler  {
     private GameObject Part3;
     [SerializeField]
     private GameObject Part4;
+
     [SerializeField]
-    private GameObject Part5;
+    private GameObject Preview;
+
+    private void Start()
+    {
+        Preview.GetComponent<Image>().sprite = Resources.Load(ItemLibrary._ItemGenerator.ItemList[CraftItemID].IconPath, typeof(Sprite)) as Sprite;
+
+        if (CraftItemAmount > 1)
+            Preview.GetComponentInChildren<Text>().text = CraftItemAmount.ToString();
+    }
 
     public void OnPointerClick(PointerEventData data)
     {
@@ -36,8 +46,7 @@ public class CraftEventHandler : MonoBehaviour, IPointerClickHandler  {
         bool isPart1OK = false;
         bool isPart2OK = false;
         bool isPart3OK = false;
-        bool isPart4OK = false;
-        bool isPart5OK = false;
+        bool isPart4OK = false; 
 
         bool isEmptyOK = false;
 
@@ -49,8 +58,6 @@ public class CraftEventHandler : MonoBehaviour, IPointerClickHandler  {
             isPart3OK = true;
         if (Part4.GetComponent<CraftPart>().ID == 0)
             isPart4OK = true;
-        if (Part5.GetComponent<CraftPart>().ID == 0)
-            isPart5OK = true;
 
         foreach (InventorySocket sc in Manadger.Inventory)
         {
@@ -62,13 +69,11 @@ public class CraftEventHandler : MonoBehaviour, IPointerClickHandler  {
                 isPart3OK = true;
             if (sc.Item.Id == Part4.GetComponent<CraftPart>().ID && sc.Number >= Part4.GetComponent<CraftPart>().Amount)
                 isPart4OK = true;
-            if (sc.Item.Id == Part5.GetComponent<CraftPart>().ID && sc.Number >= Part5.GetComponent<CraftPart>().Amount)
-                isPart5OK = true;
             if (sc.Item.Id == 0)
                 isEmptyOK = true;
         }
 
-        if (isPart1OK && isPart2OK && isPart3OK && isPart4OK && isPart5OK && isEmptyOK)
+        if (isPart1OK && isPart2OK && isPart3OK && isPart4OK && isEmptyOK)
             return true;
         else
             return false;
@@ -86,8 +91,9 @@ public class CraftEventHandler : MonoBehaviour, IPointerClickHandler  {
                 sc.Number -= Part3.GetComponent<CraftPart>().Amount;
             if (sc.Item.Id == Part4.GetComponent<CraftPart>().ID && sc.Number >= Part4.GetComponent<CraftPart>().Amount)
                 sc.Number -= Part4.GetComponent<CraftPart>().Amount;
-            if (sc.Item.Id == Part5.GetComponent<CraftPart>().ID && sc.Number >= Part5.GetComponent<CraftPart>().Amount)
-                sc.Number -= Part5.GetComponent<CraftPart>().Amount;
+
+            if (sc.Number == 0)
+                sc.Item = ItemLibrary._ItemGenerator.ItemList[0];
         }
 
         foreach (InventorySocket sc in Manadger.Inventory)
