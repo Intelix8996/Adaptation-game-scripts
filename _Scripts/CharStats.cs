@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -92,17 +93,41 @@ public class CharStats : MonoBehaviour
     [SerializeField]
     private Text RadiationCount; //RadGroup
 
+    [Header("Ragdoll Colliders")]
+    [SerializeField]
+    private GameObject[] RagdollColliders = new GameObject[11];
+
     private UnityEngine.PostProcessing.PostProcessingBehaviour PostProcessingProfile;
+    private bool isStaminaRestoringBelowTen = false;
+    private bool isCollisionInCooldown = false;
+
+    [SerializeField]
+    private Text ApplicationInfo;
+
+    public enum DeathReasons
+    {
+        Fall,
+        Suicide,
+        other,
+    }
 
     private void Start()
     {
         Root = GetComponent<ThirdPersonCharacter>();
         PostProcessingProfile = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<UnityEngine.PostProcessing.PostProcessingBehaviour>();
+        ApplicationInfo.text = "Early Tech Pre-Alpha: Work in Progress\nVersion: " + Application.version + " Build: " + Application.version.Remove(0,2) + "\nUnity Player: " + Application.unityVersion + "(" + Application.platform + ")";
+        Console._Console.Body.text = Console._Console.Body.text + ("\n<b><i><color=#ffff00ff>----------------------------------------------------------\nEarly Tech Pre-Alpha: Work in Progress\nVersion: " + Application.version + " Build: " + Application.version.Remove(0, 2) + "\nUnity Player: " + Application.unityVersion + "(" + Application.platform + ")\n----------------------------------------------------------</color></i></b>");
     }
 
     public void Update()
     {
-        if (Input.GetKey(KeyCode.LeftShift) && GetComponent<ThirdPersonUserControl>().m_Move != Vector3.zero)
+        if (HealthPoint <= 0.99f && Root.isAlive)
+            PerformDeath(DeathReasons.other);
+
+        if (Input.GetKeyUp(KeyCode.LeftShift) && Stamina <= 10)
+            isStaminaRestoringBelowTen = true;
+
+        if (Input.GetKey(KeyCode.LeftShift) && GetComponent<ThirdPersonUserControl>().m_Move != Vector3.zero && !isStaminaRestoringBelowTen)
         {
             Stamina -= StaminaOut;
             Stamina = Clamp(Stamina);
@@ -113,9 +138,10 @@ public class CharStats : MonoBehaviour
             Stamina = Clamp(Stamina);
         }
 
-        if (Input.GetButtonDown("Jump") && Stamina > StaminaOutJump && Root.m_IsGrounded && !Root.m_Crouching)
+        if (Input.GetButtonDown("Jump") && Stamina > StaminaOutJump && Root.m_IsGrounded && !Root.m_Crouching && !Console._Console.isConsoleActive)
         {
             Stamina -= StaminaOutJump;
+            SoundHandler.PlaySound(SoundHandler.lib.SFXSoundsBank[2]);
         }
 
         if (Stamina < 100)
@@ -144,27 +170,26 @@ public class CharStats : MonoBehaviour
             Root.m_MoveSpeedMultiplier = Root.m_NormalSpeedMultiplier;
             Root.m_AnimSpeedMultiplier = Root.m_NormalAnimMultiplier;
         }
+        else
+            isStaminaRestoringBelowTen = false;
+
         if (Stamina < 1)
         {
             Root.m_MoveSpeedMultiplier = Root.m_NormalSpeedMultiplier / 2;
             Root.m_AnimSpeedMultiplier = Root.m_NormalAnimMultiplier / 2;
         }
         if (Stamina < StaminaOutJump)
-        {
             Root.canJump = false;
-        }
+
         if (Stamina > StaminaOutJump)
-        {
             Root.canJump = true;
-        }
+
         if (Radiation >= 1)
-        {
             Radiation -= RadiationOut;
-        }
+
         if (Radiation >= HPOutRadPlank)
-        {
             HealthPoint -= HPOutRad;
-        }
+
 
         if (Radiation >= 1)
         {
@@ -196,27 +221,21 @@ public class CharStats : MonoBehaviour
 
 
         if (HealthPoint < 20)
-        {
             BackgroundHP.GetComponent<Animator>().enabled = true;
-        }
         else
         {
             BackgroundHP.GetComponent<Animator>().enabled = false;
             BackgroundHP.color = new Vector4(0, 0, 0, 0.235f);
         }
         if (Food < 15)
-        {
             BackgroundFood.GetComponent<Animator>().enabled = true;
-        }
         else
         {
             BackgroundFood.GetComponent<Animator>().enabled = false;
             BackgroundFood.color = new Vector4(0, 0, 0, 0.235f);
         }
         if (Water < 30)
-        {
             BackgroundWater.GetComponent<Animator>().enabled = true;
-        }
         else
         {
             BackgroundWater.GetComponent<Animator>().enabled = false;
@@ -224,13 +243,9 @@ public class CharStats : MonoBehaviour
         }
 
         if (Radiation > 60)
-        {
             RadiationCount.color = new Vector4(1, 0.235f, 0.235f, 1);
-        }
         else
-        {
             RadiationCount.color = new Vector4(0, 1, 0.13f, 1);
-        }
 
         HealthPoint = Clamp(HealthPoint);
         Food = Clamp(Food);
@@ -240,26 +255,20 @@ public class CharStats : MonoBehaviour
         Radiation = Clamp(Radiation);
 
         if (HealthPoint < 50 && HealthPoint >= 0)
-        {
             HealthPoint += HPRestore;
-        }
+
         if (Food <= 100 && Food > 0)
-        {
             Food -= FoodOut;
-        }
+
         if (Water <= 100 && Water > 0)
-        {
             Water -= WaterOut;
-        }
 
         if (Water < HPOutWaterPlank)
-        {
             HealthPoint -= HPOutWater;
-        }
+
         if (Food < HPOutFoodPlank)
-        {
             HealthPoint -= HPOutFood;
-        }
+
 
         HealthBar.rectTransform.localScale = new Vector3(HealthPoint / 100, 1, 1);
         WaterBar.rectTransform.localScale = new Vector3(Water / 100, 1, 1);
@@ -275,16 +284,96 @@ public class CharStats : MonoBehaviour
         RadiationCount.text = Convert.ToString(Convert.ToInt16(Radiation));
     }
 
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (!isCollisionInCooldown)
+        {
+            if (collision.relativeVelocity.magnitude > 25f && collision.relativeVelocity.magnitude < 40f)
+                HealthPoint -= collision.relativeVelocity.magnitude * 2;
+            if (collision.relativeVelocity.magnitude > 40f)
+                PerformDeath(DeathReasons.Fall);
+
+            StartCoroutine("CollisionCooldown", 0.15f);
+        }
+    }
+
+    private void OnDisable()
+    {
+        PostProcessingProfile.profile.grain.enabled = false;
+        PostProcessingProfile.profile.vignette.enabled = false;
+        PostProcessingProfile.profile.chromaticAberration.enabled = false;
+    }
+
     public float Clamp(float a)
     {
-        if (a <= 0)
-        {
+        if (a < 0)
             a = 0;
-        }
-        if (a >= 100)
-        {
+        else if (a > 100)
             a = 100;
-        }
+
         return a;
+    }
+
+    public void PerformDeath(DeathReasons DeathType)
+    {
+        Root.isAlive = false;
+        Debug.Log("Reason of death:" + DeathType);
+        GetComponent<ThirdPersonUserControl>().enabled = false;
+        GetComponent<Collider>().enabled = false;
+        GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
+
+        foreach (GameObject RagdollCollider in RagdollColliders)
+        {
+            RagdollCollider.GetComponent<Collider>().enabled = true;
+        }
+
+        StartCoroutine("PerformAnimatorDisable", DeathType);
+        GameObject.FindGameObjectWithTag("Canvas").GetComponent<Canvas>().enabled = false;
+    }
+
+    IEnumerator PerformAnimatorDisable(DeathReasons DeathType)
+    {
+        if (DeathType == DeathReasons.Fall)
+            yield return new WaitForSeconds(0.01f);
+        else
+            yield return new WaitForSeconds(0.5f);
+        GetComponent<Animator>().enabled = false;
+    }
+
+    public IEnumerator PerformRagdoll()
+    {
+        GetComponent<ThirdPersonUserControl>().enabled = false;
+        GetComponent<Collider>().enabled = false;
+        GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
+
+        foreach (GameObject RagdollCollider in RagdollColliders)
+        {
+            RagdollCollider.GetComponent<Collider>().enabled = true;
+        }
+
+        yield return new WaitForSeconds(1);
+        GetComponent<Animator>().enabled = false;
+    }
+
+    public IEnumerator DisableRagdoll()
+    {
+        GetComponent<ThirdPersonUserControl>().enabled = true;
+        GetComponent<Animator>().enabled = true;
+        GetComponent<Collider>().enabled = true;
+        GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeRotation;
+
+        foreach (GameObject RagdollCollider in RagdollColliders)
+        {
+            RagdollCollider.GetComponent<Collider>().enabled = false;
+        }
+
+        yield return null;
+    }
+
+    private IEnumerator CollisionCooldown(float time)
+    {
+        isCollisionInCooldown = true;
+        yield return new WaitForSeconds(time);
+        isCollisionInCooldown = false;
     }
 }

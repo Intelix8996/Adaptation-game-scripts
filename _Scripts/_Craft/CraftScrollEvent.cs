@@ -8,27 +8,17 @@ public class CraftScrollEvent : MonoBehaviour,IScrollHandler {
     private float scrollSensitivity = 50;
 
     [SerializeField]
-    private Vector3 Origin;
-
-    [SerializeField]
     private CraftEventHandler[] Crafts;
 
-    private void Start()
+    public void OnScroll (PointerEventData data)
     {
-        Origin = transform.position;
-    }
-
-    public void OnScroll(PointerEventData data)
-    {
-        float currY = transform.position.y;
-
         transform.position += new Vector3(0, data.scrollDelta.y * scrollSensitivity, 0);
         Crafts = GetComponentsInChildren<CraftEventHandler>();
+        CraftEventHandler LastCraft = Crafts[Crafts.Length - 1];
 
-        if (transform.position.y < Origin.y)
-            transform.position = Origin;
-
-        if (Crafts[Crafts.Length - 1].transform.position.y >= 160)
-            transform.position = new Vector3(Origin.x, currY, 0);
+        if (transform.position.y < Screen.height) transform.position = Vector3.zero + new Vector3(0, Screen.height, 0);
+        if (LastCraft.transform.position.y >= 160) transform.position = new Vector3(0, 160 + abs(LastCraft.transform.localPosition.y), 0);
     }
+
+    public static float abs (float val) { if (val >= 0) return val; else return -val; }
 }
